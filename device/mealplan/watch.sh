@@ -19,9 +19,10 @@ check() {
     "$BIN/busybox" ash "$BASE/update.sh"
 }
 
-check 60
+( check 60 ) &   # in the background, so sleep and wake are handled from the start
 lipc-wait-event -m com.lab126.powerd goingToScreenSaver,outOfScreenSaver 2>/dev/null |
 while read -r event _; do
+    echo "$(date '+%H:%M:%S') $event" >> /tmp/mealplan-watch.log
     case "$event" in
         goingToScreenSaver)
             [ -e "$APP_PID" ] && kill -TERM "$(cat "$APP_PID")" 2>/dev/null
