@@ -168,7 +168,8 @@ def to_gray(png):
     if shutil.which("sips"):
         cmd = ["sips", "-m", GRAY_PROFILE, str(png), "--out", str(png)]
     elif shutil.which("convert"):
-        cmd = ["convert", str(png), "-colorspace", "Gray", "-depth", "8", "-strip", str(png)]
+        cmd = ["convert", str(png), "-colorspace", "Gray", "-strip", "-define", "png:color-type=0",
+               "-define", "png:bit-depth=8", str(png)]
     else:
         return  # the Kindle's drawing tool also accepts colour PNGs, just larger
     subprocess.run(cmd, capture_output=True, check=True)

@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # pinned: the screens depend on this image's Chrome and fonts
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
@@ -35,6 +35,9 @@ jobs:
           curl -fsSL -o ~/.fonts/Gelasio.ttf "$base/gelasio/Gelasio%5Bwght%5D.ttf" || true
           fc-cache -f
           fc-list | grep -i -E "anton|gelasio|liberation serif" || true
+
+      - name: Install the image converter
+        run: command -v convert || (sudo apt-get update -q && sudo apt-get install -y -q imagemagick)
 
       - name: Plan the week
         run: python generate.py --no-convert
