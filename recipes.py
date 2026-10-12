@@ -349,6 +349,9 @@ SHOP_NAMES = {
     "carrot": "Carrots", "red onion": "Red onions", "courgette": "Courgettes",
     "cucumber": "Cucumbers", "wholemeal wrap": "Wholemeal wraps",
 }
+PLURALS = {"apple": "apples", "banana": "bananas", "tomato": "tomatoes", "carrot": "carrots",
+           "cucumber": "cucumbers", "lemon": "lemons", "lime": "limes", "pepper": "peppers",
+           "courgette": "courgettes", "red onion": "red onions", "wholemeal wrap": "wholemeal wraps"}
 PACKS = {  # item: (size, unit name) for "about N tins" hints
     "chickpeas": (240, "tin"), "white beans": (240, "tin"), "black beans": (240, "tin"),
     "butter beans": (240, "tin"), "chopped tomatoes": (400, "tin"), "sardines": (95, "tin"),

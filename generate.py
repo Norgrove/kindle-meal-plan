@@ -17,7 +17,7 @@ import re
 import sys
 from pathlib import Path
 
-from recipes import BY_ID, PACKS, POOLS, SECTIONS, SERVINGS, SHOP_NAMES, STAPLES, UNITS
+from recipes import BY_ID, PACKS, PLURALS, POOLS, SECTIONS, SERVINGS, SHOP_NAMES, STAPLES, UNITS
 
 ROOT = Path(__file__).resolve().parent
 HISTORY = ROOT / "history.json"
@@ -151,6 +151,11 @@ def amount(qty, unit):
     if unit:
         text += f" {unit}{'' if qty <= 1 else 's'}"
     return text
+
+
+def item_name(item, qty, unit):
+    """Plural for counted things: 2 apples, but 1 lemon and 40 g spinach."""
+    return PLURALS.get(item, item) if unit == "" and qty > 1 else item
 
 
 def shopping_list(days):

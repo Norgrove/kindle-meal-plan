@@ -1,5 +1,5 @@
 #!/mnt/us/usbnet/bin/busybox ash
-# Fetch a new week's screens when the published week differs from the one installed.
+# Fetch the published screens when they differ from the ones installed.
 # The address to check lives in url.txt. Does nothing when offline.
 
 BASE=/mnt/us/mealplan
@@ -17,23 +17,20 @@ URL=$(cat "$BASE/url.txt" 2>/dev/null)
 touch "$LOCK"
 trap 'rm -f "$LOCK"' EXIT
 
-remote=$("$BIN/curl" -fsS -m 30 --retry 3 --retry-delay 10 "$URL/week.txt" 2>/dev/null) || exit 0
-case "$remote" in
-    20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
-    *) fail "unexpected week.txt from $URL" ;;
-esac
-[ "$remote" = "$(cat "$BASE/week.txt" 2>/dev/null)" ] && exit 0
+# The published checksum doubles as the version: fetch only when it changes.
+want=$("$BIN/curl" -fsS -m 30 --retry 3 --retry-delay 10 "$URL/mealplan.tar.gz.sha256" 2>/dev/null) || exit 0
+[ "${#want}" -eq 64 ] || fail "unexpected checksum file from $URL"
+[ "$want" = "$(cat "$BASE/bundle.sha256" 2>/dev/null)" ] && exit 0
 
 rm -rf "$TMP"
 mkdir -p "$TMP"
 "$BIN/curl" -fsS -m 300 -o "$TMP/mealplan.tar.gz" "$URL/mealplan.tar.gz" || fail "download failed"
-want=$("$BIN/curl" -fsS -m 30 "$URL/mealplan.tar.gz.sha256") || fail "checksum download failed"
 got=$("$BIN/openssl" dgst -sha256 "$TMP/mealplan.tar.gz" | sed 's/.*= //')
-[ "$want" = "$got" ] || fail "checksum mismatch for week $remote"
+[ "$want" = "$got" ] || fail "checksum mismatch"
 
 # -o: do not try to restore file owners, which the FAT user partition cannot store
 ( cd "$TMP" && "$BIN/bsdtar" -x -z -o -f mealplan.tar.gz 2>/dev/null ) || fail "could not unpack"
-[ -s "$TMP/nav.txt" ] && [ -s "$TMP/pages/w0.png" ] || fail "bundle for $remote is incomplete"
+[ -s "$TMP/nav.txt" ] && [ -s "$TMP/pages/w0.png" ] || fail "bundle is incomplete"
 
 # Swap the new week in, keeping the previous week's screens as pages.old.
 rm -rf "$BASE/pages.old"
@@ -43,4 +40,6 @@ cp "$TMP/nav.txt" "$BASE/nav.txt"
 cp "$TMP/week.txt" "$BASE/week.txt"
 rm -rf "$TMP"
 sync
-log "updated to week $remote"
+echo "$want" > "$BASE/bundle.sha256"
+sync
+log "updated to week $(cat "$BASE/week.txt")"

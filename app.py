@@ -26,7 +26,6 @@ import generate as g
 from recipes import BY_ID, SERVINGS
 
 ROOT = Path(__file__).resolve().parent
-PHOTOS = ROOT / "photos"
 MAC_CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 CHROME = (os.environ.get("CHROME")
           or (MAC_CHROME if Path(MAC_CHROME).exists() else None)
@@ -35,8 +34,6 @@ CHROME = (os.environ.get("CHROME")
 SANDBOX = ["--no-sandbox"] if os.environ.get("CI") else []  # CI runners cannot use the sandbox
 GRAY_PROFILE = "/System/Library/ColorSync/Profiles/Generic Gray Gamma 2.2 Profile.icc"
 
-HERO = (552, 232)    # photo sizes, matched by photos.py
-THUMB = (120, 80)
 PAGE_HEIGHT = 690    # usable pixels between the top bar and the footer
 CHARS_PER_LINE = 40  # conservative estimate for 25 px body text across the page
 
@@ -69,12 +66,9 @@ h2{font-size:24px;margin:12px 0 2px;border-bottom:2px solid #000}
 .lnk{display:flex;gap:16px;align-items:center;padding:5px 12px;margin:0 -12px;border-bottom:2px dotted #666}
 .lnk small{display:block;font-size:19px;line-height:1.25}
 .lnk.on{background:#000;color:#fff}.lnk.on svg{filter:invert(1)}
-.lnk.on img{outline:3px solid #fff}
 .lnk .g{margin-left:auto;font:22px -apple-system,"Liberation Sans",sans-serif;white-space:nowrap}
 .wk .lnk{padding:2px 12px;font-size:23px;line-height:1.18}.wk .lnk small{font-size:17px;line-height:1.18}
 .ic{width:120px;height:72px;flex:none}.big{width:160px;height:96px;display:block;margin:0 auto}
-img{display:block;image-rendering:pixelated;flex:none}
-img.hero{margin:0 0 8px;border:2px solid #000}
 .grid{position:relative;display:flex;align-items:flex-end;height:112px;margin:4px 0 6px;border-bottom:3px solid #000}
 .grid div{flex:1;text-align:center;position:relative}
 .grid i{display:flex;align-items:flex-end;justify-content:center;background:#000;margin:0 12px;color:#fff;
@@ -104,12 +98,6 @@ esc = html.escape
 
 
 def picture(recipe, hero=False):
-    """The dish photo if photos.py has made one, otherwise the drawn icon."""
-    width, height = HERO if hero else THUMB
-    photo = PHOTOS / f"{recipe['id']}{'' if hero else '_t'}.png"
-    if photo.exists():
-        return (f'<img{" class=hero" if hero else ""} src="{photo.as_uri()}" '
-                f'width="{width}" height="{height}" alt="">')
     return f'<svg class="{"big" if hero else "ic"}" viewBox="0 0 100 60">{ICONS[recipe["kind"]]}</svg>'
 
 
@@ -171,14 +159,13 @@ def recipe_screens(week_label, date, rid):
     times = f"Prep {recipe['prep']} min" if recipe["prep"] else "No prep"
     times += f" · Cook {recipe['cook']} min" if recipe["cook"] else " · No cooking"
     table = "".join(
-        f"<tr><td>{esc(g.amount(qty * SERVINGS, unit))}</td><td>{esc(item)}</td></tr>"
+        f"<tr><td>{esc(g.amount(qty * SERVINGS, unit))}</td>"
+        f"<td>{esc(g.item_name(item, qty * SERVINGS, unit))}</td></tr>"
         for qty, unit, item in recipe["ing"])
     top = (f"{picture(recipe, hero=True)}<h1>{esc(name)}</h1>"
            f'<p class="sub">{slot} for {SERVINGS} · about {recipe["protein"]} g protein each<br>{times}</p>'
            f'<h2>Ingredients</h2><table class="ing">{table}</table>')
-    has_photo = (PHOTOS / f"{rid}.png").exists()
-    top_height = ((HERO[1] + 12 if has_photo else 96) + 46 * lines_of(name, 26) + 62
-                  + 44 + 37 * len(recipe["ing"]))
+    top_height = 96 + 46 * lines_of(name, 26) + 62 + 44 + 37 * len(recipe["ing"])
 
     step_heights = [32 * lines_of(step, CHARS_PER_LINE - 3) + 9 for step in recipe["steps"]]
     crumb = f"{date:%a} · {slot}"
@@ -330,7 +317,6 @@ def render(pages, out):
             result = subprocess.run(
                 [CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", *SANDBOX,
                  "--force-device-scale-factor=1", f"--user-data-dir={profile}",
-                 "--allow-file-access-from-files",
                  "--window-size=600,800", f"--screenshot={shot}", src.as_uri()],
                 capture_output=True, text=True)
             if not shot.exists():
