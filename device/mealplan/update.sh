@@ -31,7 +31,8 @@ want=$("$BIN/curl" -fsS -m 30 "$URL/mealplan.tar.gz.sha256") || fail "checksum d
 got=$("$BIN/openssl" dgst -sha256 "$TMP/mealplan.tar.gz" | sed 's/.*= //')
 [ "$want" = "$got" ] || fail "checksum mismatch for week $remote"
 
-( cd "$TMP" && "$BIN/bsdtar" -xzf mealplan.tar.gz ) || fail "could not unpack"
+# -o: do not try to restore file owners, which the FAT user partition cannot store
+( cd "$TMP" && "$BIN/bsdtar" -x -z -o -f mealplan.tar.gz 2>/dev/null ) || fail "could not unpack"
 [ -s "$TMP/nav.txt" ] && [ -s "$TMP/pages/w0.png" ] || fail "bundle for $remote is incomplete"
 
 # Swap the new week in, keeping the previous week's screens as pages.old.
