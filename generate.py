@@ -23,13 +23,15 @@ ROOT = Path(__file__).resolve().parent
 HISTORY = ROOT / "history.json"
 
 TARGET = 90          # grams of protein a day, per person
-SALMON_NIGHTS = 5
+SALMON_NIGHTS = 3
 NEVER = 999
 
 NOT_METRIC = re.compile(
     r"\b(tbsp|tsp|teaspoons?|tablespoons?|cups?|oz|ounces?|lbs?|pounds?|inch(es)?|pints?|fahrenheit)\b|°F",
     re.I)
-BANNED = re.compile(r"avocado|protein bar|sweetener|honey|syrup|sugar", re.I)
+BANNED = re.compile(
+    r"avocado|protein bar|sweetener|honey|syrup|sugar"
+    r"|skyr|cottage cheese|\bkale\b|cucumber|pak choi|chives|corn tortilla|sardine", re.I)
 SECTION_OF = {item: section for section, items in SECTIONS.items() for item in items}
 
 

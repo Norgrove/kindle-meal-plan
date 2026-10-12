@@ -81,6 +81,7 @@ h2{font-size:24px;margin:12px 0 2px;border-bottom:2px solid #000}
 table{width:100%;border-collapse:collapse;font-size:24px}
 td{padding:3px 6px;border-bottom:2px dotted #666;vertical-align:top}
 table.ing td:first-child{width:30%;font-weight:bold;white-space:nowrap}
+table.tight{font-size:21px}table.tight td{padding:1px 6px}
 table.shop{font-size:22px}
 table.shop td:last-child{text-align:right;font-weight:bold;white-space:nowrap}
 table.shop small{font-weight:normal;font-size:17px}
@@ -162,10 +163,23 @@ def recipe_screens(week_label, date, rid):
         f"<tr><td>{esc(g.amount(qty * SERVINGS, unit))}</td>"
         f"<td>{esc(g.item_name(item, qty * SERVINGS, unit))}</td></tr>"
         for qty, unit, item in recipe["ing"])
-    top = (f"{picture(recipe, hero=True)}<h1>{esc(name)}</h1>"
-           f'<p class="sub">{slot} for {SERVINGS} · about {recipe["protein"]} g protein each<br>{times}</p>'
-           f'<h2>Ingredients</h2><table class="ing">{table}</table>')
-    top_height = 96 + 46 * lines_of(name, 26) + 62 + 44 + 37 * len(recipe["ing"])
+
+    def top_for(hero, tight):
+        """The heading and ingredients, and the height they take up."""
+        markup = ((picture(recipe, hero=True) if hero else "") + f"<h1>{esc(name)}</h1>"
+                  f'<p class="sub">{slot} for {SERVINGS} · about {recipe["protein"]} g protein each<br>{times}</p>'
+                  f'<h2>Ingredients</h2><table class="ing{" tight" if tight else ""}">{table}</table>')
+        height = ((96 if hero else 0) + 46 * lines_of(name, 26) + 62 + 44
+                  + (31 if tight else 37) * len(recipe["ing"]))
+        return markup, height
+
+    # Long ingredient lists get smaller rows, then lose the picture, to stay on one screen.
+    for hero, tight in ((True, False), (True, True), (False, True)):
+        top, top_height = top_for(hero, tight)
+        if top_height <= PAGE_HEIGHT:
+            break
+    else:
+        sys.exit(f"{rid}: {len(recipe['ing'])} ingredients do not fit on one screen")
 
     step_heights = [32 * lines_of(step, CHARS_PER_LINE - 3) + 9 for step in recipe["steps"]]
     crumb = f"{date:%a} · {slot}"

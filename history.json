@@ -2,41 +2,42 @@
  "weeks": {
   "2026-10-12": [
    [
-    "b_spinach_omelette",
-    "l_chickpea_wrap",
-    "s_miso_rice"
-   ],
-   [
-    "b_overnight_oats",
-    "l_bean_tacos",
-    "s_potatoes",
-    "n_almonds_fruit"
-   ],
-   [
-    "b_oats_pumpkin",
-    "l_chickpea_feta",
-    "d_cod_butter_beans",
-    "n_edamame"
+    "b_mackerel_rye",
+    "l_lentil_soup",
+    "s_tikka_rice"
    ],
    [
     "b_tofu_scramble",
-    "l_sardines_sourdough",
-    "d_prawn_curry"
+    "l_tempeh_bowl",
+    "s_green_curry"
    ],
    [
-    "b_cottage_rye",
-    "l_tuna_bean",
-    "s_quinoa_broccoli"
+    "b_pb_porridge",
+    "l_chickpea_wrap",
+    "d_lentil_pasta_prawns"
    ],
    [
-    "b_mackerel_rye",
-    "l_tofu_rice_bowl",
-    "s_white_beans"
+    "b_smoothie",
+    "l_sweet_potato_lentil",
+    "d_beyond_burger",
+    "n_roasted_chickpeas"
    ],
    [
-    "b_skyr_bowl",
+    "b_soy_mushroom_eggs",
     "l_prawn_noodle",
-    "s_noodle_bowl"
+    "d_tofu_dal",
+    "n_almonds_fruit"
+   ],
+   [
+    "b_harissa_eggs",
+    "l_chickpea_feta",
+    "s_sweet_potato",
+    "n_hummus_veg"
+   ],
+   [
+    "b_banana_pancakes",
+    "l_egg_fried_rice",
+    "d_cod_butter_beans"
    ]
   ]
  }

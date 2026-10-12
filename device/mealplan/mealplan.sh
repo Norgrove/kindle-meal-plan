@@ -50,12 +50,29 @@ show() {
     "$BIN/fbink" -q $flash -g file="$BASE/pages/$1.png" > /dev/null 2>&1
 }
 
+# nav.txt is held in memory as one variable per state (nav_w0, nav_d2_1, ...), so
+# a key press costs no extra processes. bundle.sha256 is the last file update.sh
+# writes, so a change there means new screens have arrived.
+load_nav() {
+    while read -r name rest; do
+        case "$name" in
+            "" | *[!a-z0-9_]*) continue ;;
+        esac
+        eval "nav_$name=\$rest"
+    done < "$BASE/nav.txt"
+    loaded=
+    [ -r "$BASE/bundle.sha256" ] && read -r loaded < "$BASE/bundle.sha256"
+}
+
 # Start on today's row (plans run Monday to Sunday).
 state=w0
 weekday=$(date +%u 2>/dev/null)
 case "$weekday" in
     [1-7]) state=w$((weekday - 1)) ;;
 esac
+load_nav
+shown=$loaded
+awake=0
 
 sleep "${1:-3}"               # let KUAL close and the home screen finish drawing
 killall -STOP cvm 2>/dev/null
@@ -77,18 +94,17 @@ while read -r -t "$IDLE" line <&3; do
     esac
     code=${line#*code }
     code=${code%% *}
-    # The grabbed buttons do not reach the power service, so reset its screensaver
-    # timer by hand. (preventScreenSaver is no good: it also disables the power switch.)
-    lipc-set-prop com.lab126.powerd touchScreenSaverTimeout 1 2>/dev/null &
-
-    echo "$(date '+%H:%M:%S') key $code on $state" >> /tmp/mealplan-keys.log
-    row=$(grep "^$state " "$BASE/nav.txt")
-    if [ -z "$row" ]; then   # a new week arrived while this page was open
+    current=
+    [ -r "$BASE/bundle.sha256" ] && read -r current < "$BASE/bundle.sha256"
+    [ "$current" != "$loaded" ] && load_nav   # new screens arrived while the app was open
+    eval "row=\$nav_$state"
+    if [ "$current" != "$shown" ] || [ -z "$row" ]; then   # this page is from the old set
+        shown=$current
         state=w0
         show "$state"
         continue
     fi
-    set -- $row
+    set -- "$state" $row   # the stored row leaves out its own name
     next=-
     case "$code" in
         "$K_UP" | "$K_PGBACK_A" | "$K_PGBACK_B") next=$2 ;;
@@ -102,5 +118,15 @@ while read -r -t "$IDLE" line <&3; do
     if [ -n "$next" ] && [ "$next" != "-" ] && [ "$next" != "$state" ]; then
         state=$next
         show "$state"
+    fi
+
+    # The grabbed buttons do not reach the power service, so reset its screensaver
+    # timer by hand. (preventScreenSaver is no good: it also disables the power switch.)
+    # After the draw and at most every 30 seconds, so it never competes with a page turn.
+    read -r now _ < /proc/uptime
+    now=${now%%.*}
+    if [ "$((now - awake))" -ge 30 ]; then
+        awake=$now
+        lipc-set-prop com.lab126.powerd touchScreenSaverTimeout 1 2>/dev/null &
     fi
 done
