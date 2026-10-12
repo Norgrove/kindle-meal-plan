@@ -40,7 +40,7 @@ jobs:
         run: command -v convert || (sudo apt-get update -q && sudo apt-get install -y -q imagemagick)
 
       - name: Plan the week
-        run: python generate.py --no-convert
+        run: python generate.py
 
       - name: Render the Kindle screens
         run: python app.py
