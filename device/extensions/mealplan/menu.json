@@ -7,6 +7,26 @@
 		"exitmenu": true,
 		"refresh": false,
 		"status": false
+	},
+	{
+		"name": "Meal Plan: open on wake - ON",
+		"priority": -998,
+		"action": "./bin/autostart.sh",
+		"params": "on",
+		"exitmenu": false,
+		"refresh": false,
+		"status": false,
+		"internal": "status Meal Plan will open on wake"
+	},
+	{
+		"name": "Meal Plan: open on wake - OFF",
+		"priority": -997,
+		"action": "./bin/autostart.sh",
+		"params": "off",
+		"exitmenu": false,
+		"refresh": false,
+		"status": false,
+		"internal": "status Meal Plan will not open on wake"
 	}
 	]
 }

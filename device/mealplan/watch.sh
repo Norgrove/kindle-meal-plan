@@ -1,10 +1,13 @@
 #!/mnt/us/usbnet/bin/busybox ash
-# Check for a new week shortly after start-up, then each time the Kindle wakes
-# from its screensaver. Started at boot by /etc/init.d/mealplan.
+# Background helper, started at boot by /etc/init.d/mealplan and by the KUAL entry.
+#  - checks for a new week shortly after start-up and after each wake-up
+#  - opens the app on wake-up when autostart.txt says "on"
+#  - closes the app when the Kindle goes to sleep, so it can sleep normally
 
 BASE=/mnt/us/mealplan
 BIN=/mnt/us/usbnet/bin
 PIDFILE=/tmp/mealplan-watch.pid
+APP_PID=/tmp/mealplan.pid
 
 if [ -e "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
     exit 0
@@ -17,6 +20,17 @@ check() {
 }
 
 check 60
-lipc-wait-event -m com.lab126.powerd outOfScreenSaver 2>/dev/null | while read -r _; do
-    check 25
+lipc-wait-event -m com.lab126.powerd goingToScreenSaver,outOfScreenSaver 2>/dev/null |
+while read -r event _; do
+    case "$event" in
+        goingToScreenSaver)
+            [ -e "$APP_PID" ] && kill -TERM "$(cat "$APP_PID")" 2>/dev/null
+            ;;
+        outOfScreenSaver)
+            if [ "$(cat "$BASE/autostart.txt" 2>/dev/null)" = "on" ]; then
+                "$BIN/busybox" ash "$BASE/mealplan.sh" 2 > /tmp/mealplan.log 2>&1 &
+            fi
+            check 25
+            ;;
+    esac
 done

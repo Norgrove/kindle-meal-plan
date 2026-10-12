@@ -7,6 +7,8 @@
 # While it runs, the Kindle's own interface (cvm) is paused and the buttons are
 # grabbed, so nothing behind the app reacts to key presses. Home, Menu, or Back
 # from the week page exits. Needs USBNetwork's tools in /mnt/us/usbnet/bin.
+#
+# Usage: mealplan.sh [seconds to wait before drawing, default 3]
 
 BASE=/mnt/us/mealplan
 BIN=/mnt/us/usbnet/bin
@@ -27,13 +29,18 @@ echo $$ > "$PIDFILE"
 cleanup() {
     trap - EXIT INT TERM HUP
     kill "$EV0" "$EV1" 2>/dev/null
+    lipc-set-prop com.lab126.powerd preventScreenSaver 0 2>/dev/null
     killall -CONT cvm 2>/dev/null
     rm -f "$FIFO" "$PIDFILE"
     # The interface was paused, so nudge it into repainting its own screen.
-    sleep 1
-    echo "send $K_HOME" > /proc/keypad 2>/dev/null
+    # Not when the Kindle is going to sleep: it draws its screensaver itself.
+    if [ -z "$QUIET" ]; then
+        sleep 1
+        echo "send $K_HOME" > /proc/keypad 2>/dev/null
+    fi
 }
-trap 'cleanup; exit 0' EXIT INT TERM HUP
+trap 'cleanup; exit 0' EXIT INT HUP
+trap 'QUIET=1; cleanup; exit 0' TERM   # sent by watch.sh when the Kindle goes to sleep
 
 show() {
     kind=${1%%[0-9]*}
@@ -50,8 +57,11 @@ case "$weekday" in
     [1-7]) state=w$((weekday - 1)) ;;
 esac
 
-sleep 3                       # let KUAL close and the home screen finish drawing
+sleep "${1:-3}"               # let KUAL close and the home screen finish drawing
 killall -STOP cvm 2>/dev/null
+# The grabbed buttons no longer reach the power service, so stop it timing out
+# into the screensaver while the app is in use. The power switch still works.
+lipc-set-prop com.lab126.powerd preventScreenSaver 1 2>/dev/null
 
 rm -f "$FIFO"
 mkfifo "$FIFO"
