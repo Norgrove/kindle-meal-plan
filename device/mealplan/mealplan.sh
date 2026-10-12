@@ -19,7 +19,8 @@ IDLE=300   # seconds without a key press before handing the screen back
 # Key codes measured on this Kindle with evtest.
 K_UP=103; K_DOWN=108; K_LEFT=105; K_RIGHT=106; K_SELECT=194
 K_BACK=158; K_MENU=139; K_HOME=102
-K_PGFWD_L=109; K_PGFWD_R=191; K_PGBACK_L=104; K_PGBACK_R=193
+K_PGFWD_A=191; K_PGBACK_A=109
+K_PGFWD_B=104; K_PGBACK_B=193   # all four confirmed on the device
 
 if [ -e "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
     exit 0
@@ -90,8 +91,8 @@ while read -r -t "$IDLE" line <&3; do
     set -- $row
     next=-
     case "$code" in
-        "$K_UP" | "$K_PGBACK_L" | "$K_PGBACK_R") next=$2 ;;
-        "$K_DOWN" | "$K_PGFWD_L" | "$K_PGFWD_R") next=$3 ;;
+        "$K_UP" | "$K_PGBACK_A" | "$K_PGBACK_B") next=$2 ;;
+        "$K_DOWN" | "$K_PGFWD_A" | "$K_PGFWD_B") next=$3 ;;
         "$K_SELECT") next=$4 ;;
         "$K_BACK") next=$5; [ "$next" = "-" ] && break ;;
         "$K_LEFT") next=$6 ;;
