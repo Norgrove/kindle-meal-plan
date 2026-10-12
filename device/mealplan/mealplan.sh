@@ -29,7 +29,6 @@ echo $$ > "$PIDFILE"
 cleanup() {
     trap - EXIT INT TERM HUP
     kill "$EV0" "$EV1" 2>/dev/null
-    lipc-set-prop com.lab126.powerd preventScreenSaver 0 2>/dev/null
     killall -CONT cvm 2>/dev/null
     rm -f "$FIFO" "$PIDFILE"
     # The interface was paused, so nudge it into repainting its own screen.
@@ -59,9 +58,6 @@ esac
 
 sleep "${1:-3}"               # let KUAL close and the home screen finish drawing
 killall -STOP cvm 2>/dev/null
-# The grabbed buttons no longer reach the power service, so stop it timing out
-# into the screensaver while the app is in use. The power switch still works.
-lipc-set-prop com.lab126.powerd preventScreenSaver 1 2>/dev/null
 
 rm -f "$FIFO"
 mkfifo "$FIFO"
@@ -80,6 +76,9 @@ while read -r -t "$IDLE" line <&3; do
     esac
     code=${line#*code }
     code=${code%% *}
+    # The grabbed buttons do not reach the power service, so reset its screensaver
+    # timer by hand. (preventScreenSaver is no good: it also disables the power switch.)
+    lipc-set-prop com.lab126.powerd touchScreenSaverTimeout 1 2>/dev/null &
 
     row=$(grep "^$state " "$BASE/nav.txt")
     if [ -z "$row" ]; then   # a new week arrived while this page was open
