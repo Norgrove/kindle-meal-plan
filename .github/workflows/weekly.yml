@@ -1,0 +1,60 @@
+name: Weekly meal plan
+
+on:
+  schedule:
+    - cron: "0 3 * * 1" # Mondays 03:00 UTC, so the plan is for the week just starting
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install lookalike fonts for Impact and Georgia
+        run: |
+          mkdir -p ~/.fonts
+          base=https://github.com/google/fonts/raw/main/ofl
+          curl -fsSL -o ~/.fonts/Anton-Regular.ttf "$base/anton/Anton-Regular.ttf" || true
+          curl -fsSL -o ~/.fonts/Gelasio.ttf "$base/gelasio/Gelasio%5Bwght%5D.ttf" || true
+          fc-cache -f
+          fc-list | grep -i -E "anton|gelasio|liberation serif" || true
+
+      - name: Plan the week
+        run: python generate.py --no-convert
+
+      - name: Render the Kindle screens
+        run: python app.py
+
+      - name: Save the plan history
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add history.json
+          git diff --cached --quiet || git commit -m "Plan week of $(cat dist/app/week.txt)"
+          git push
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

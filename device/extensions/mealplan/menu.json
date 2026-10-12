@@ -1,0 +1,12 @@
+{
+	"items": [
+	{
+		"name": "Meal Plan",
+		"priority": -999,
+		"action": "./bin/launch.sh",
+		"exitmenu": true,
+		"refresh": false,
+		"status": false
+	}
+	]
+}

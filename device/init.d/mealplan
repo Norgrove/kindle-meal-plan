@@ -1,0 +1,10 @@
+#!/bin/sh
+# Start the meal-plan update watcher at boot, if it is installed on the user partition.
+case "$1" in
+    start)
+        if [ -f /mnt/us/mealplan/watch.sh ] && [ -x /mnt/us/usbnet/bin/busybox ]; then
+            /mnt/us/usbnet/bin/busybox ash /mnt/us/mealplan/watch.sh > /dev/null 2>&1 &
+        fi
+        ;;
+esac
+exit 0
