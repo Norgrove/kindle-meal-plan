@@ -275,7 +275,8 @@ def build_screens(week_start, days):
             after = names[n + 1] if n + 1 < len(names) else name
             select = names[n + 1] if n + 1 < len(names) else back
             pages[name] = markup
-            nav.append((name, before, after, select, back, before, after))
+            # Back steps to the previous page first, and leaves from the first page.
+            nav.append((name, before, after, select, back if n == 0 else before, before, after))
 
     for i in range(8):
         pages[f"w{i}"] = week_screen(week_label, dates, days, totals, item_count, i)

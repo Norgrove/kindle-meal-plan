@@ -80,6 +80,7 @@ while read -r -t "$IDLE" line <&3; do
     # timer by hand. (preventScreenSaver is no good: it also disables the power switch.)
     lipc-set-prop com.lab126.powerd touchScreenSaverTimeout 1 2>/dev/null &
 
+    echo "$(date '+%H:%M:%S') key $code on $state" >> /tmp/mealplan-keys.log
     row=$(grep "^$state " "$BASE/nav.txt")
     if [ -z "$row" ]; then   # a new week arrived while this page was open
         state=w0
