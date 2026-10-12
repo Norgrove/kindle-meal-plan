@@ -202,7 +202,7 @@ def recipe_screens(week_label, date, rid):
 
 def shopping_screens(week_label, sections, staples):
     """Lay the list out over as many screens as it needs, keeping headings with their items."""
-    row_height, heading_height = 34, 46
+    row_height, heading_height = 37, 48   # sized for the cloud fonts, which run taller
     first_budget, budget = PAGE_HEIGHT - 96, PAGE_HEIGHT - 10
     pages, body, used, open_section, seen = [], "", 0, None, set()
 
