@@ -31,7 +31,7 @@ while read -r event _; do
             if [ "$(cat "$BASE/autostart.txt" 2>/dev/null)" = "on" ]; then
                 "$BIN/busybox" ash "$BASE/mealplan.sh" 2 > /tmp/mealplan.log 2>&1 &
             fi
-            check 25
+            ( check 25 ) &   # in the background: the next sleep must not wait for it
             ;;
     esac
 done
