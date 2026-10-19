@@ -14,7 +14,7 @@ BASE=/mnt/us/mealplan
 BIN=/mnt/us/usbnet/bin
 FIFO=/tmp/mealplan.fifo
 PIDFILE=/tmp/mealplan.pid
-IDLE=300   # seconds without a key press before handing the screen back
+FLASH_EVERY=5   # partial refreshes before a full one clears the e-ink ghosting
 
 # Key codes measured on this Kindle with evtest.
 K_UP=103; K_DOWN=108; K_LEFT=105; K_RIGHT=106; K_SELECT=194
@@ -42,11 +42,24 @@ cleanup() {
 trap 'cleanup; exit 0' EXIT INT HUP
 trap 'QUIET=1; cleanup; exit 0' TERM   # sent by watch.sh when the Kindle goes to sleep
 
+# Partial refreshes are quick but leave faint ghosts on e-ink, so flash the whole
+# screen when the page type changes and after every few partial ones.
+partials=0
 show() {
     kind=${1%%[0-9]*}
     flash=""
-    [ "$kind" != "$last_kind" ] && flash="-f"   # full refresh when the page type changes
+    if [ "$kind" != "$last_kind" ] || [ "$partials" -ge "$FLASH_EVERY" ]; then
+        flash="-f"
+        partials=0
+    else
+        partials=$((partials + 1))
+    fi
     last_kind=$kind
+    # A raw framebuffer copy draws in about 25 ms; decoding the PNG takes about 120 ms.
+    if [ -e "$BASE/pages/$1.raw" ]; then
+        "$BIN/busybox" cat "$BASE/pages/$1.raw" > /dev/fb0 &&
+            "$BIN/fbink" -q $flash -s > /dev/null 2>&1 && return
+    fi
     "$BIN/fbink" -q $flash -g file="$BASE/pages/$1.png" > /dev/null 2>&1
 }
 
@@ -87,7 +100,8 @@ EV1=$!
 
 show "$state"
 
-while read -r -t "$IDLE" line <&3; do
+# No idle timeout: the app stays up until the Kindle sleeps (watch.sh closes it) or Home.
+while read -r line <&3; do
     case "$line" in
         *"EV_KEY"*"value 1") ;;
         *) continue ;;

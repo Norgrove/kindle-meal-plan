@@ -6,7 +6,7 @@
 
 Every screen the app can show (each page with each possible highlight) is
 drawn as HTML, photographed at 600x800 by headless Chrome, and converted to a
-grayscale PNG. nav.txt tells the on-device script which screen each button
+grayscale PNG plus a raw framebuffer copy (see framebuffer.py). nav.txt tells the on-device script which screen each button
 leads to. Output goes to dist/app/, and dist/site/ holds the download bundle.
 """
 import argparse
@@ -22,6 +22,7 @@ import tarfile
 import tempfile
 from pathlib import Path
 
+import framebuffer
 import generate as g
 from recipes import BY_ID
 
@@ -467,6 +468,10 @@ def render(pages, out):
             if not shot.exists():
                 sys.exit(f"Chrome did not render {state}:\n{result.stderr[-500:]}")
             to_gray(shot)
+            try:   # the Kindle draws the raw copy far faster, and falls back to the PNG
+                framebuffer.write_raw(shot, shot.with_suffix(".raw"))
+            except ValueError as e:
+                print(f"No raw copy of {state}: {e}")
 
 
 def package(dist):
