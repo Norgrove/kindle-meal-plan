@@ -1,0 +1,98 @@
+# House rules for the weekly meal plan.
+#
+# This is the one place the rules live. generate.py plans and validates every
+# week against this file, and app.py renders it as the "House rules" pages on
+# the Kindle. Change a rule here and nothing else needs touching, unless the
+# recipe pool in recipes.py no longer has recipes that satisfy it (the build
+# then fails and says which rule).
+#
+# Day names are Mon Tue Wed Thu Fri Sat Sun. Weights are grams, times minutes.
+
+[people]
+me = "Pescetarian, mostly plant-based, 75 kg, building muscle with strength training three times a week."
+husband = "Eats dinners with me. Doesn't eat eggs, so every recipe with eggs notes a ham or chicken swap for him."
+husband_swap_needed_for = ["eggs"]     # ingredients that need a "Husband:" note
+
+[protein]
+target_line = 90        # the dashed line on screen, g a day
+aim = [105, 120]        # where the planner tries to land each day
+floor = 85              # a day under this fails the plan
+per_meal = [25, 40]     # breakfast, lunch and dinner, per person
+notes = [
+    "Normal-sized plates: big portions make me too full, so favour protein-dense, low-volume food.",
+]
+
+[shakes]
+protein = 30
+powder = "unflavoured whey or pea protein"   # the only protein powder allowed
+training_days = ["Mon", "Wed", "Fri"]        # one shake as a snack on each
+notes = [
+    "No sweeteners, no protein bars, no ultra-processed or artificially sweetened products.",
+    "Protein powder only where it doesn't change texture, so only in shakes.",
+]
+
+[breakfast]
+serves = 1
+weekday_types = ["yoghurt bowl", "peanut butter sourdough", "porridge"]   # rotated Mon to Fri
+weekend_types = ["smoked salmon"]                                        # Sat and Sun
+notes = [
+    "Peanut butter sourdough can be sweet or savoury.",
+    "Weekends: something with smoked salmon, such as scrambled or Turkish eggs.",
+]
+
+[lunch]
+serves = 1
+max_minutes = 15         # assembly time, start to finish
+no_oven = true
+office_days = []         # e.g. ["Thu"]: these days get the tuna sandwich instead of a batch
+sandwich = "Tuna sweetcorn sandwich"   # for office days and any day no batch covers
+batches = [
+    { name = "A", made = "Sun", covers = ["Mon", "Tue", "Wed"] },
+    { name = "B", made = "Wed", covers = ["Thu", "Fri", "Sat"] },
+]
+rice = "microwave rice pouch"   # the only rice a lunch may use
+notes = [
+    "Simple: 10 to 15 min assembly. Shop-bought shortcuts are fine: marinated tofu, pouch lentils, jarred peppers, microwave rice.",
+    "Never store cooked rice for more than 24 hours: heat a pouch on the day.",
+]
+
+[dinner]
+serves = 2
+nights = { salmon = 3, fish = 2, plant = 2 }   # fish = cod, prawns etc; plant = tofu, tempeh, seitan
+quick_days = ["Tue", "Wed"]
+quick_max_minutes = 25
+other_minutes = [35, 50]
+cuisines = ["Japanese", "Korean", "Indian", "Middle Eastern", "Mediterranean"]
+max_same_cuisine = 2      # per week
+very_spicy_max = 1        # per week: a properly spicy ramen now and then
+no_repeat_weeks = 2       # no dinner from the previous two weeks
+notes = [
+    "Spice: medium. You should feel it, not sweat.",
+]
+
+[flavour]
+acid = ["lemon", "lime", "vinegar", "pickle", "pickled", "kimchi", "capers", "gherkins", "sumac"]
+notes = [
+    "Real depth and proper seasoning, not basic.",
+    "Use pastes and aromatics: miso, gochujang, harissa, tikka, chilli crisp, za'atar, sumac, tahini.",
+    "Salt the protein early. Finish every lunch and dinner with acid: lemon, lime, vinegar or pickles.",
+]
+
+[ingredients]
+yoghurt = "Fage Total 5% Greek yoghurt"   # the only yoghurt
+never = [
+    "avocado", "blue cheese", "goat's cheese", "cottage cheese", "skyr",
+    # From the 12 Oct request:
+    "kale", "cucumber", "pak choi", "chives", "corn tortilla", "sardine",
+    # Standing rules from the original brief:
+    "protein bar", "sweetener", "honey", "syrup", "sugar",
+]
+not_for_me = ["chicken", "ham", "beef", "pork", "bacon", "lamb", "turkey", "chorizo"]   # only ever in a Husband: swap
+sparingly = ["feta", "halloumi"]   # optional extras only
+sparingly_max = 2                  # meals a week that offer one
+
+[format]
+notes = [
+    "UK English and metric units. Oven temperatures written as 220°C (200°C fan).",
+    "Every meal shows its type, name, approximate protein, ingredients with quantities, numbered method, and any Husband: swap.",
+]

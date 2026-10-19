@@ -39,6 +39,54 @@
     "l_egg_fried_rice",
     "d_cod_butter_beans"
    ]
+  ],
+  "2026-10-19": [
+   [
+    "b_porridge_apple",
+    "l_gochujang_soba",
+    "s_miso_aubergine",
+    "n_protein_shake"
+   ],
+   [
+    "b_yog_berry",
+    "l_gochujang_soba",
+    "s_harissa_couscous",
+    "n_yoghurt_pot"
+   ],
+   [
+    "b_pb_chilli",
+    "l_gochujang_soba",
+    "p_miso_tempeh",
+    "n_protein_shake"
+   ],
+   [
+    "b_porridge_pb",
+    "l_tikka_paneer",
+    "s_gochujang_broccoli",
+    "n_cheddar_oatcakes"
+   ],
+   [
+    "b_yog_tahini",
+    "l_tikka_paneer",
+    "f_chraimeh",
+    "n_protein_shake"
+   ],
+   [
+    "b_ss_rye",
+    "l_tikka_paneer",
+    "f_puttanesca",
+    "n_edamame"
+   ],
+   [
+    "b_ss_turkish",
+    "l_tuna_sandwich",
+    "p_med_traybake"
+   ]
   ]
+ },
+ "ahead": {
+  "2026-10-26": {
+   "A": "l_mackerel_lentil"
+  }
  }
 }

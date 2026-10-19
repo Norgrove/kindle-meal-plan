@@ -23,7 +23,7 @@ import tempfile
 from pathlib import Path
 
 import generate as g
-from recipes import BY_ID, SERVINGS
+from recipes import BY_ID
 
 ROOT = Path(__file__).resolve().parent
 MAC_CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
@@ -82,6 +82,11 @@ table{width:100%;border-collapse:collapse;font-size:24px}
 td{padding:3px 6px;border-bottom:2px dotted #666;vertical-align:top}
 table.ing td:first-child{width:30%;font-weight:bold;white-space:nowrap}
 table.tight{font-size:21px}table.tight td{padding:1px 6px}
+.dy.cp .ic{width:80px;height:48px}.dy.cp .lnk{padding:3px 12px;font-size:22px;line-height:1.2}
+.dy.cp .lnk small{font-size:17px}
+td i{font-weight:normal;font-size:19px}
+p.hb{font-size:23px;line-height:1.3;margin-top:14px;padding-top:8px;border-top:2px solid #000}
+ul.rules{margin:4px 0 0;padding-left:26px;font-size:22px;line-height:1.27}ul.rules li{margin:0 0 6px}
 table.shop{font-size:22px}
 table.shop td:last-child{text-align:right;font-weight:bold;white-space:nowrap}
 table.shop small{font-weight:normal;font-size:17px}
@@ -115,20 +120,35 @@ def lines_of(text, per_line=CHARS_PER_LINE):
 
 # ------------------------------------------------------------------ screens
 
+def listed(items):
+    """Mon, Wed and Fri"""
+    items = list(items)
+    return ", ".join(items[:-1]) + " and " + items[-1] if len(items) > 1 else "".join(items)
+
+
+def span(days):
+    """Mon–Wed for a run of days, otherwise a list."""
+    idx = [g.DAYS.index(d) for d in days]
+    if len(idx) > 2 and idx == list(range(idx[0], idx[0] + len(idx))):
+        return f"{days[0]}–{days[-1]}"
+    return listed(days)
+
+
 def week_screen(week_label, dates, days, totals, item_count, selected):
     scale = 86 / max(100, max(totals))
     bars = "".join(f'<div><i style="height:{t * scale}px">{t}</i><b>{"MTWTFSS"[i]}</b></div>'
                    for i, t in enumerate(totals))
     rows = ""
     for i, (date, day) in enumerate(zip(dates, days)):
-        dinner = next(r for r in day if g.slot_of(r) == "Dinner")
         rows += (f'<div class="lnk{" on" if i == selected else ""}"><span>{g.day_label(date)}'
-                 f'<small>{esc(BY_ID[dinner]["name"])}</small></span><span class="g">{totals[i]} g</span></div>')
-    rows += (f'<div class="lnk{" on" if selected == 7 else ""}"><span>Shopping list'
-             f'<small>{item_count} items for {SERVINGS} people</small></span><span class="g">▶</span></div>')
+                 f'<small>{esc(BY_ID[day[2]]["name"])}</small></span><span class="g">{totals[i]} g</span></div>')
+    extras = [("Shopping list", f"{item_count} items for the week"),
+              ("House rules", "What every plan has to follow")]
+    for n, (title, note) in enumerate(extras, start=7):
+        rows += (f'<div class="lnk{" on" if selected == n else ""}"><span>{title}'
+                 f'<small>{note}</small></span><span class="g">▶</span></div>')
     body = ("<h1>This week's plan</h1>"
-            f'<p class="sub">About {round(sum(totals) / 7)} g protein a day each. '
-            f"Dashed line is the {g.TARGET} g target.</p>"
+            f'<p class="sub">About {round(sum(totals) / 7)} g protein a day. Dashed line: {g.TARGET} g target.</p>'
             f'<div class="grid">{bars}<u style="bottom:{g.TARGET * scale + 24}px"></u></div>'
             f'<div class="wk">{rows}</div>')
     return screen(week_label, f"Week of {week_label}", "▲▼ move · ● open · Home exit", body)
@@ -142,34 +162,77 @@ def day_bar(day):
     return f'<div class="seg">{segs}<u style="left:{g.TARGET / full * 100}%"></u></div>'
 
 
-def day_screen(week_label, date, day, selected):
-    rows = "".join(
-        f'<div class="lnk{" on" if m == selected else ""}">{picture(BY_ID[r])}'
-        f'<span>{g.slot_of(r)}: {esc(BY_ID[r]["name"])}'
-        f'<small>{BY_ID[r]["protein"]} g protein each</small></span></div>'
-        for m, r in enumerate(day))
+def day_rows(i, days, next_batches):
+    """What a day screen lists: (recipe, label, note under it, portions, line for the recipe page).
+    The meals come first, then any lunch batch to make that evening."""
+    layout, rows = g.lunch_layout(), []
+    for rid in days[i]:
+        r, slot = BY_ID[rid], g.slot_of(rid)
+        portions, page_note, label = g.servings(slot), None, slot
+        note = f"{r['protein']} g protein"
+        if slot == "Dinner":
+            note += f" · serves {portions} · {g.minutes(rid)} min"
+        elif slot == "Lunch" and layout[i]:
+            name = layout[i]
+            covered = g.batch_days(name)
+            made = next(b["made"] for b in g.batches() if b["name"] == name)
+            label, portions = f"Lunch (batch {name})", len(covered)
+            page_note = f"Batch {name}: made {made} for {span(covered)} · makes {portions}, serves 1 each"
+        elif slot == "Snack" and r["group"] == "shake":
+            label = "Snack (training day)"
+        rows.append((rid, label, note, portions, page_note))
+    for batch in g.batches():
+        covered = g.batch_days(batch["name"])
+        if batch["made"] != g.DAYS[i] or not covered:
+            continue
+        later = g.made_week_before(batch)
+        rid = next_batches.get(batch["name"]) if later else days[g.DAYS.index(covered[0])][1]
+        if rid:
+            when = f"{span(covered)}{' next week' if later else ''}"
+            rows.append((rid, f"Tonight: make batch {batch['name']}", f"Lunches for {when}", len(covered),
+                         f"Batch {batch['name']}: made {batch['made']} for {when} · makes {len(covered)}, serves 1 each"))
+    return rows
+
+
+def day_screen(week_label, date, day, rows, selected):
+    def height(label, name, compact):
+        per_line, line, small, pad, icon = (41, 26, 20, 8, 48) if compact else (33, 32, 24, 12, 72)
+        return max(icon, line * lines_of(f"{label}: {name}", per_line) + small) + pad
+
+    compact = False
+    for compact in (False, True):
+        if sum(height(label, BY_ID[rid]["name"], compact) for rid, label, *_ in rows) <= PAGE_HEIGHT - 135:
+            break
+    else:
+        sys.exit(f"{g.day_label(date)}: too many rows for one screen")
+    items = "".join(
+        f'<div class="lnk{" on" if m == selected else ""}">{picture(BY_ID[rid])}'
+        f'<span>{esc(label)}: {esc(BY_ID[rid]["name"])}<small>{esc(note)}</small></span></div>'
+        for m, (rid, label, note, *_) in enumerate(rows))
     body = (f"<h1>{g.day_label(date)}</h1>{day_bar(day)}"
-            f'<p class="sub">{g.protein(day)} g protein each. Dashed line marks {g.TARGET} g.</p>{rows}')
+            f'<p class="sub">{g.protein(day)} g protein. Dashed line marks {g.TARGET} g.</p>'
+            f'<div class="dy{" cp" if compact else ""}">{items}</div>')
     return screen(week_label, g.day_label(date), "▲▼ move · ● open · ◀▶ day · Back", body)
 
 
-def recipe_screens(week_label, date, rid):
+def recipe_screens(week_label, date, rid, label, portions, page_note):
     """One screen when the whole recipe fits, otherwise ingredients first and the method after."""
     recipe = BY_ID[rid]
-    slot, name = g.slot_of(rid), recipe["name"]
+    name = recipe["name"]
     times = f"Prep {recipe['prep']} min" if recipe["prep"] else "No prep"
     times += f" · Cook {recipe['cook']} min" if recipe["cook"] else " · No cooking"
+    about = page_note or f"{g.slot_of(rid)} · serves {portions}"
     table = "".join(
-        f"<tr><td>{esc(g.amount(qty * SERVINGS, unit))}</td>"
-        f"<td>{esc(g.item_name(item, qty * SERVINGS, unit))}</td></tr>"
-        for qty, unit, item in recipe["ing"])
+        f"<tr><td>{esc(g.amount(qty * portions, unit))}</td>"
+        f"<td>{esc(g.item_name(item, qty * portions, unit))}{' <i>(optional)</i>' if flag else ''}</td></tr>"
+        for qty, unit, item, flag in recipe["ing"])
 
     def top_for(hero, tight):
         """The heading and ingredients, and the height they take up."""
         markup = ((picture(recipe, hero=True) if hero else "") + f"<h1>{esc(name)}</h1>"
-                  f'<p class="sub">{slot} for {SERVINGS} · about {recipe["protein"]} g protein each<br>{times}</p>'
+                  f'<p class="sub">{esc(about)} · about {recipe["protein"]} g protein each<br>{times}</p>'
                   f'<h2>Ingredients</h2><table class="ing{" tight" if tight else ""}">{table}</table>')
-        height = ((96 if hero else 0) + 46 * lines_of(name, 26) + 62 + 44
+        height = ((96 if hero else 0) + 46 * lines_of(name, 26) + 28 * lines_of(about, 40) + 34 + 44
                   + (31 if tight else 37) * len(recipe["ing"]))
         return markup, height
 
@@ -181,43 +244,56 @@ def recipe_screens(week_label, date, rid):
     else:
         sys.exit(f"{rid}: {len(recipe['ing'])} ingredients do not fit on one screen")
 
-    step_heights = [32 * lines_of(step, CHARS_PER_LINE - 3) + 9 for step in recipe["steps"]]
-    crumb = f"{date:%a} · {slot}"
+    # The method, then the husband's swap, laid out as blocks with estimated heights.
+    blocks = [("step", s, 32 * lines_of(s, CHARS_PER_LINE - 3) + 9) for s in recipe["steps"]]
+    if recipe["husband"]:
+        swap = f"Husband: {recipe['husband']}"
+        blocks.append(("husband", swap, 30 + 32 * lines_of(swap, CHARS_PER_LINE)))
+    crumb = f"{date:%a} · {label}"
 
-    def method(steps, first_number):
-        items = "".join(f"<li>{esc(s)}</li>" for s in steps)
-        return f'<h2>Method</h2><ol start="{first_number}">{items}</ol>'
+    def method(chunk, first_number):
+        steps = "".join(f"<li>{esc(text)}</li>" for kind, text, _ in chunk if kind == "step")
+        out = f'<h2>Method</h2><ol start="{first_number}">{steps}</ol>' if steps else ""
+        out += "".join(f'<p class="hb"><b>Husband:</b> {esc(text.removeprefix("Husband: "))}</p>'
+                       for kind, text, _ in chunk if kind == "husband")
+        return out
 
-    if top_height + 44 + sum(step_heights) <= PAGE_HEIGHT:
-        return [screen(week_label, crumb, "Back", top + method(recipe["steps"], 1))]
+    if top_height + 44 + sum(h for *_, h in blocks) <= PAGE_HEIGHT:
+        return [screen(week_label, crumb, "Back", top + method(blocks, 1))]
 
     pages = [top]
     budget = PAGE_HEIGHT - 46 * lines_of(name, 34) - 50
     start, used, chunk = 1, 0, []
-    for step, height in zip(recipe["steps"], step_heights):
-        if chunk and used + height > budget:
+    for block in blocks:
+        if chunk and used + block[2] > budget:
             pages.append(f'<h1 class="sm">{esc(name)}</h1>' + method(chunk, start))
-            start, used, chunk = start + len(chunk), 0, []
-        chunk.append(step)
-        used += height
+            start, used, chunk = start + sum(b[0] == "step" for b in chunk), 0, []
+        chunk.append(block)
+        used += block[2]
     pages.append(f'<h1 class="sm">{esc(name)}</h1>' + method(chunk, start))
+    return paged_hints(week_label, crumb, pages, first="▼ method · Back")
 
+
+def paged_hints(week_label, crumb, pages, first="▼ more · Back"):
+    """Wrap a run of page bodies in screens, with footers saying where up and down go."""
     screens = []
     for n, body in enumerate(pages):
-        if n == 0:
-            hint = "▼ method · Back"
+        if len(pages) == 1:
+            hint = "Back"
+        elif n == 0:
+            hint = first
         elif n == len(pages) - 1:
-            hint = "▲ ingredients · Back" if n == 1 else "▲ previous · Back"
+            hint = "▲ previous · Back"
         else:
             hint = "▲▼ more · Back"
         screens.append(screen(week_label, f"{crumb} · {n + 1} of {len(pages)}", hint, body))
     return screens
 
 
-def shopping_screens(week_label, sections, staples):
+def shopping_screens(week_label, sections, staples, note):
     """Lay the list out over as many screens as it needs, keeping headings with their items."""
     row_height, heading_height = 37, 48   # sized for the cloud fonts, which run taller
-    first_budget, budget = PAGE_HEIGHT - 96, PAGE_HEIGHT - 10
+    first_budget, budget = PAGE_HEIGHT - 96 - 26 * lines_of(note, 46), PAGE_HEIGHT - 10
     pages, body, used, open_section, seen = [], "", 0, None, set()
 
     def close_page():
@@ -229,7 +305,7 @@ def shopping_screens(week_label, sections, staples):
     for section, lines in sections:
         for name, amount in lines:
             limit = budget if pages else first_budget
-            need = row_height + (heading_height if section != open_section else 0)
+            need = row_height * lines_of(name, 30) + (heading_height if section != open_section else 0)
             if used + need > limit:
                 close_page()
             if section != open_section:
@@ -242,7 +318,7 @@ def shopping_screens(week_label, sections, staples):
                 seen.add(section)
             amount = esc(amount).replace("(", "<small>(").replace(")", ")</small>")
             body += f"<tr><td>{esc(name)}</td><td>{amount}</td></tr>"
-            used += row_height
+            used += row_height * lines_of(name, 30)
 
     staple_text = ", ".join(staples)
     staple_height = heading_height + 30 * lines_of(staple_text, 46) + 10
@@ -255,30 +331,81 @@ def shopping_screens(week_label, sections, staples):
     close_page()
 
     count = sum(len(lines) for _, lines in sections)
-    screens = []
-    for n, page in enumerate(pages):
-        head = ("<h1>Shopping list</h1>"
-                f'<p class="sub">{count} items for {SERVINGS} people, covering all seven days.</p>'
-                if n == 0 else "")
-        if len(pages) == 1:
-            hint = "Back"
-        elif n == 0:
-            hint = "▼ more · Back"
-        elif n == len(pages) - 1:
-            hint = "▲ previous · Back"
-        else:
-            hint = "▲▼ more · Back"
-        screens.append(screen(week_label, f"Shopping list · {n + 1} of {len(pages)}", hint, head + page))
-    return screens
+    head = f'<h1>Shopping list</h1><p class="sub">{count} items. {esc(note)}</p>'
+    return paged_hints(week_label, "Shopping list", [(head if n == 0 else "") + p for n, p in enumerate(pages)])
 
 
-def build_screens(week_start, days):
+def house_rules():
+    """rules.toml as (heading, [lines]) for the House rules pages."""
+    R = g.RULES
+    p, s, b, l, d, i = (R[k] for k in ("protein", "shakes", "breakfast", "lunch", "dinner", "ingredients"))
+    nights = d["nights"]
+    return [
+        ("Who it's for", [f"Me: {R['people']['me']}", f"Husband: {R['people']['husband']}"]),
+        ("Protein and portions", [
+            f"Target line {p['target_line']} g a day. Plans aim for {p['aim'][0]}–{p['aim'][1]} g; "
+            f"a day under {p['floor']} g fails.",
+            f"{p['per_meal'][0]}–{p['per_meal'][1]} g protein a meal.", *p["notes"],
+            f"A shake of about {s['protein']} g ({s['powder']}) as a snack on training days: "
+            f"{listed(s['training_days'])}.", *s["notes"]]),
+        (f"Breakfasts (serves {b['serves']})", [
+            f"Weekdays rotate: {listed(b['weekday_types'])}.", f"Weekends: {listed(b['weekend_types'])}.",
+            f"Yoghurt is always {i['yoghurt']}.", *b["notes"]]),
+        (f"Lunches (serves {l['serves']})", [
+            f"{l['max_minutes']} min or less{', no oven' if l['no_oven'] else ''}.",
+            *(f"Batch {x['name']} made {x['made']} for {span(x['covers'])}." for x in l["batches"]),
+            f"{l['sandwich']} on office days ({listed(l['office_days']) or 'none set'}) and any gap.",
+            f"Rice only from a {l['rice']}.", *l["notes"]]),
+        (f"Dinners (serves {d['serves']})", [
+            f"Each week: {nights['salmon']} salmon, {nights['fish']} other fish, {nights['plant']} plant-protein nights.",
+            f"{listed(d['quick_days'])}: {d['quick_max_minutes']} min max. "
+            f"Other nights: {d['other_minutes'][0]}–{d['other_minutes'][1]} min.",
+            f"Cuisines: {listed(d['cuisines'])}. No more than {d['max_same_cuisine']} of one a week.",
+            f"At most {d['very_spicy_max']} properly spicy dinner a week, such as a fiery ramen.",
+            f"No dinner from the previous {d['no_repeat_weeks']} weeks.", *d["notes"]]),
+        ("Flavour", R["flavour"]["notes"]),
+        ("Never use", [
+            listed(i["never"]).capitalize() + ".",
+            f"{listed(i['sparingly']).capitalize()} only as optional extras, at most {i['sparingly_max']} meals a week.",
+            f"Pescetarian: no {listed(i['not_for_me'])}, except in a Husband: swap."]),
+        ("Format", R["format"]["notes"]),
+    ]
+
+
+def rules_screens(week_label):
+    """The House rules over as many screens as they need, keeping headings with their first line."""
+    heading, line, per_line, gap = 48, 28, 44, 6
+    pages, body, used = [], "", 96   # the first page starts under the title
+    for title, lines in house_rules():
+        heights = [line * lines_of(t, per_line) + gap for t in lines]
+        if used + heading + heights[0] > PAGE_HEIGHT:
+            pages.append(body)
+            body, used = "", 0
+        body += f"<h2>{esc(title)}</h2><ul class='rules'>"
+        used += heading
+        for text, h in zip(lines, heights):
+            if used + h > PAGE_HEIGHT:
+                pages.append(body + "</ul>")
+                body, used = f"<h2>{esc(title)} (continued)</h2><ul class='rules'>", heading
+            body += f"<li>{esc(text)}</li>"
+            used += h
+        body += "</ul>"
+    pages.append(body)
+    head = '<h1>House rules</h1><p class="sub">Every week is planned and checked against these.</p>'
+    return paged_hints(week_label, "House rules", [(head if n == 0 else "") + p for n, p in enumerate(pages)])
+
+
+def build_screens(week_start, days, history):
     """Return ({state: html}, [nav rows]). A nav row is: state up down select back left right."""
     dates = [week_start + dt.timedelta(days=i) for i in range(7)]
     totals = [g.protein(day) for day in days]
     week_label = f"{week_start.day} {week_start:%b}"
-    sections, staples = g.shopping_list(days)
+    sections, staples = g.shopping_list(days, history, week_start)
     item_count = sum(len(lines) for _, lines in sections)
+    next_batches = history["ahead"].get((week_start + dt.timedelta(weeks=1)).isoformat(), {})
+    shop_note = "Dinners for 2, everything else for 1."
+    if next_batches:
+        shop_note += f" Includes next week's batch {listed(sorted(next_batches))}."
     pages, nav = {}, []
 
     def paged(prefix, screens, back):
@@ -292,18 +419,21 @@ def build_screens(week_start, days):
             # Back steps to the previous page first, and leaves from the first page.
             nav.append((name, before, after, select, back if n == 0 else before, before, after))
 
-    for i in range(8):
+    last_week_row = 8
+    for i in range(last_week_row + 1):
         pages[f"w{i}"] = week_screen(week_label, dates, days, totals, item_count, i)
-        select = f"d{i}_0" if i < 7 else "s0"
-        nav.append((f"w{i}", f"w{max(i - 1, 0)}", f"w{min(i + 1, 7)}", select, "-", "-", "-"))
+        select = f"d{i}_0" if i < 7 else ("s0" if i == 7 else "h0")
+        nav.append((f"w{i}", f"w{max(i - 1, 0)}", f"w{min(i + 1, last_week_row)}", select, "-", "-", "-"))
     for i, (date, day) in enumerate(zip(dates, days)):
-        last = len(day) - 1
-        for m, rid in enumerate(day):
-            pages[f"d{i}_{m}"] = day_screen(week_label, date, day, m)
+        rows = day_rows(i, days, next_batches)
+        last = len(rows) - 1
+        for m, (rid, label, note, portions, page_note) in enumerate(rows):
+            pages[f"d{i}_{m}"] = day_screen(week_label, date, day, rows, m)
             nav.append((f"d{i}_{m}", f"d{i}_{max(m - 1, 0)}", f"d{i}_{min(m + 1, last)}", f"r{i}_{m}",
                         f"w{i}", f"d{max(i - 1, 0)}_0", f"d{min(i + 1, 6)}_0"))
-            paged(f"r{i}_{m}", recipe_screens(week_label, date, rid), f"d{i}_{m}")
-    paged("s0", shopping_screens(week_label, sections, staples), "w7")
+            paged(f"r{i}_{m}", recipe_screens(week_label, date, rid, label, portions, page_note), f"d{i}_{m}")
+    paged("s0", shopping_screens(week_label, sections, staples, shop_note), "w7")
+    paged("h0", rules_screens(week_label), "w8")
     return pages, nav
 
 
@@ -378,7 +508,7 @@ def main():
     out = ROOT / "build" / key / "app"
     if out.exists():
         shutil.rmtree(out)
-    pages, nav = build_screens(week_start, days)
+    pages, nav = build_screens(week_start, days, history)
     render(pages, out)
     (out / "nav.txt").write_text("".join(" ".join(row) + "\n" for row in nav))
     (out / "week.txt").write_text(key + "\n")

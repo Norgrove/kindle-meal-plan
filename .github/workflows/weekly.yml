@@ -3,6 +3,10 @@ name: Weekly meal plan
 on:
   schedule:
     - cron: "0 3 * * 1" # Mondays 03:00 UTC, so the plan is for the week just starting
+    # GitHub sometimes skips scheduled runs (it missed 19 Oct 2026), so try again later.
+    # A repeat run reuses the saved plan and publishes the same bundle, so it changes nothing.
+    - cron: "0 5 * * 1"
+    - cron: "0 9 * * 1"
   workflow_dispatch:
 
 permissions:
