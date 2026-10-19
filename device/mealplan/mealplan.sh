@@ -14,7 +14,6 @@ BASE=/mnt/us/mealplan
 BIN=/mnt/us/usbnet/bin
 FIFO=/tmp/mealplan.fifo
 PIDFILE=/tmp/mealplan.pid
-FLASH_EVERY=5   # partial refreshes before a full one clears the e-ink ghosting
 
 # Key codes measured on this Kindle with evtest.
 K_UP=103; K_DOWN=108; K_LEFT=105; K_RIGHT=106; K_SELECT=194
@@ -42,18 +41,12 @@ cleanup() {
 trap 'cleanup; exit 0' EXIT INT HUP
 trap 'QUIET=1; cleanup; exit 0' TERM   # sent by watch.sh when the Kindle goes to sleep
 
-# Partial refreshes are quick but leave faint ghosts on e-ink, so flash the whole
-# screen when the page type changes and after every few partial ones.
-partials=0
+# Flash the whole screen only when the page type changes (opening a day, a recipe or
+# a list). Moving the highlight stays a quick partial refresh with no black blink.
 show() {
     kind=${1%%[0-9]*}
     flash=""
-    if [ "$kind" != "$last_kind" ] || [ "$partials" -ge "$FLASH_EVERY" ]; then
-        flash="-f"
-        partials=0
-    else
-        partials=$((partials + 1))
-    fi
+    [ "$kind" != "$last_kind" ] && flash="-f"
     last_kind=$kind
     # A raw framebuffer copy draws in about 25 ms; decoding the PNG takes about 120 ms.
     if [ -e "$BASE/pages/$1.raw" ]; then
