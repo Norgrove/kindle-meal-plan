@@ -170,6 +170,49 @@
     "p_zaatar_seitan",
     "n_edamame"
    ]
+  ],
+  "2026-11-09": [
+   [
+    "b_porridge_apple",
+    "l_tuna_bean",
+    "f_chraimeh",
+    "n_protein_shake"
+   ],
+   [
+    "b_yog_berry",
+    "l_tuna_bean",
+    "s_miso_greens",
+    "n_yoghurt_pot"
+   ],
+   [
+    "b_pb_berry",
+    "l_tuna_bean",
+    "f_prawn_pasta",
+    "n_protein_shake"
+   ],
+   [
+    "b_porridge_pb",
+    "l_zaatar_tofu",
+    "p_tofu_tikka_chana",
+    "n_yoghurt_pot"
+   ],
+   [
+    "b_yog_apple",
+    "l_zaatar_tofu",
+    "p_tarka_dal",
+    "n_protein_shake"
+   ],
+   [
+    "b_ss_omelette",
+    "l_zaatar_tofu",
+    "s_miso_aubergine",
+    "n_kefir"
+   ],
+   [
+    "b_ss_scramble",
+    "l_tuna_sandwich",
+    "s_gochujang_broccoli"
+   ]
   ]
  },
  "ahead": {
@@ -181,6 +224,9 @@
   },
   "2026-11-09": {
    "A": "l_tuna_bean"
+  },
+  "2026-11-16": {
+   "A": "l_gochujang_soba"
   }
  }
 }
