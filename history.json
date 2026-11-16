@@ -213,6 +213,49 @@
     "l_tuna_sandwich",
     "s_gochujang_broccoli"
    ]
+  ],
+  "2026-11-16": [
+   [
+    "b_yog_tahini",
+    "l_gochujang_soba",
+    "p_seitan_shawarma",
+    "n_protein_shake"
+   ],
+   [
+    "b_pb_chilli",
+    "l_gochujang_soba",
+    "s_harissa_couscous",
+    "n_yoghurt_pot"
+   ],
+   [
+    "b_porridge_apple",
+    "l_gochujang_soba",
+    "s_tikka_raita",
+    "n_protein_shake"
+   ],
+   [
+    "b_yog_apple",
+    "l_tikka_paneer",
+    "s_kerala_curry",
+    "n_cheddar_oatcakes"
+   ],
+   [
+    "b_pb_berry",
+    "l_tikka_paneer",
+    "f_puttanesca",
+    "n_protein_shake"
+   ],
+   [
+    "b_ss_rye",
+    "l_tikka_paneer",
+    "p_med_traybake",
+    "n_yoghurt_pot"
+   ],
+   [
+    "b_ss_turkish",
+    "l_tuna_sandwich",
+    "f_jjigae"
+   ]
   ]
  },
  "ahead": {
@@ -227,6 +270,9 @@
   },
   "2026-11-16": {
    "A": "l_gochujang_soba"
+  },
+  "2026-11-23": {
+   "A": "l_mackerel_lentil"
   }
  }
 }
