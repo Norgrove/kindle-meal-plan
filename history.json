@@ -256,6 +256,49 @@
     "l_tuna_sandwich",
     "f_jjigae"
    ]
+  ],
+  "2026-11-23": [
+   [
+    "b_pb_banana",
+    "l_mackerel_lentil",
+    "p_tempeh_katsu",
+    "n_protein_shake"
+   ],
+   [
+    "b_porridge_berry",
+    "l_mackerel_lentil",
+    "f_sesame_cod",
+    "n_yoghurt_pot"
+   ],
+   [
+    "b_yog_apple",
+    "l_mackerel_lentil",
+    "s_gochujang_bowl",
+    "n_protein_shake"
+   ],
+   [
+    "b_pb_chilli",
+    "l_miso_tofu_rice",
+    "s_harissa_traybake",
+    "n_cheddar_oatcakes"
+   ],
+   [
+    "b_porridge_apple",
+    "l_miso_tofu_rice",
+    "p_zaatar_seitan",
+    "n_protein_shake"
+   ],
+   [
+    "b_ss_scramble",
+    "l_miso_tofu_rice",
+    "s_salsa_verde",
+    "n_edamame"
+   ],
+   [
+    "b_ss_omelette",
+    "l_tuna_sandwich",
+    "f_goan_curry"
+   ]
   ]
  },
  "ahead": {
@@ -273,6 +316,9 @@
   },
   "2026-11-23": {
    "A": "l_mackerel_lentil"
+  },
+  "2026-11-30": {
+   "A": "l_prawn_rice"
   }
  }
 }
